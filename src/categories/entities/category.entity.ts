@@ -12,12 +12,23 @@ export class Category {
   @Field(() => String, { description: 'Category ID' })
   _id!: string;
 
+  @Field(() => String, { description: 'Category slug' })
+  id!: string;
+
   @Prop({ type: String, required: true, trim: true, unique: true })
   @Field(() => String, { description: 'Category name' })
   name!: string;
 
   @Field(() => [Post], { description: 'User posts' })
   posts?: Post[] | null;
+
+  @Prop({ type: Date, default: Date.now })
+  @Field(() => Date, { description: 'Category created date' })
+  createdAt?: Date;
+
+  @Prop({ type: Date, default: Date.now })
+  @Field(() => Date, { description: 'Category updated date' })
+  updatedAt?: Date;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
