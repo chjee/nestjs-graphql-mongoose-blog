@@ -13,6 +13,9 @@ export class User {
   @Field(() => String, { description: 'User id' })
   _id!: string;
 
+  @Field(() => String, { description: 'User slug' })
+  id!: string;
+
   @Prop({ type: String, required: true, trim: true, unique: true })
   @Field(() => String, { description: 'User email' })
   email!: string;
