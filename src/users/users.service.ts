@@ -24,7 +24,6 @@ export class UsersService {
 
     const user = new this.users(createUserInput);
     return user.save();
-    // return this.users.create(createUserInput);
   }
 
   async findAll(params: { skip?: number; limit?: number }): Promise<User[]> {
