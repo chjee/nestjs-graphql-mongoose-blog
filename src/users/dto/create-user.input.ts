@@ -9,15 +9,15 @@ export class CreateUserInput {
   @Length(6, 60)
   email!: string;
 
-  @Field(() => String, { nullable: true, description: 'User Name' })
+  @Field(() => String, { description: 'User Name' })
   @IsString()
   @Length(4, 60)
-  name?: string;
+  name!: string;
 
   @Field(() => String, { description: 'Password' })
   @IsNotEmpty()
   @IsString()
-  @Length(6, 60)
+  @Length(6, 20)
   password!: string;
 
   @Field(() => String, { description: 'User Role' })
