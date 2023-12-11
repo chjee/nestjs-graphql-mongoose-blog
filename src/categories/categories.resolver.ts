@@ -35,7 +35,7 @@ export class CategoriesResolver {
   async updateCategory(
     @Args('id', { type: () => ID }) id: string,
     @Args('updateCategoryInput') updateCategoryInput: UpdateCategoryInput,
-  ): Promise<Category> {
+  ): Promise<any> {
     return this.categoriesService.update(id, updateCategoryInput);
   }
 
