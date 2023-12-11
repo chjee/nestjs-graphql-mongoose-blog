@@ -1,8 +1,7 @@
 import { CreateCategoryInput } from './create-category.input';
-import { InputType, Field, PartialType } from '@nestjs/graphql';
+import { InputType, PickType } from '@nestjs/graphql';
 
 @InputType()
-export class UpdateCategoryInput extends PartialType(CreateCategoryInput) {
-  @Field(() => String, { description: 'Category name' })
-  name!: string;
-}
+export class UpdateCategoryInput extends PickType(CreateCategoryInput, [
+  'name',
+] as const) {}
