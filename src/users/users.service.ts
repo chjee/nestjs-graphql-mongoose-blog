@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { Model } from 'mongoose';
@@ -26,18 +26,23 @@ export class UsersService {
     return user.save();
   }
 
-  async findAll(params: { skip?: number; limit?: number }): Promise<User[]> {
-    const { skip, limit } = params;
+  async findAll(params: {
+    skip?: number;
+    limit?: number;
+    where?: object;
+    orderBy?: string;
+  }): Promise<User[] | null> {
+    const { skip, limit, where, orderBy } = params;
     const count = await this.users.countDocuments().exec();
 
     if (count <= 0) {
-      this.logger.error('No users found');
-      throw new NotFoundException('No users found');
+      this.logger.log('No users found');
+      return null;
     }
 
     const users = await this.users
-      .find()
-      .sort('-createdAt')
+      .find(where || {})
+      .sort(orderBy || '-createdAt')
       .skip(skip || 0)
       .limit(limit || 10)
       .exec();
@@ -45,23 +50,18 @@ export class UsersService {
     return users;
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.users.findById({ _id: id }).exec();
-
-    if (!user) {
-      this.logger.error(`User with id ${id} not found`);
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-    return user;
+  async findOne(where: object): Promise<User | null> {
+    return this.users.findOne(where).exec();
   }
 
-  async update(id: string, updateUserInput: UpdateUserInput): Promise<any> {
+  async update(params: { where: object; data: UpdateUserInput }): Promise<any> {
+    const { where, data } = params;
     return this.users
-      .findByIdAndUpdate({ _id: id }, { $set: updateUserInput }, { new: true })
+      .findOneAndUpdate(where, { $set: data }, { new: true })
       .exec();
   }
 
-  async remove(id: string): Promise<any> {
-    return this.users.findByIdAndDelete({ _id: id }).exec();
+  async remove(where: object): Promise<any> {
+    return this.users.findOneAndDelete(where).exec();
   }
 }
