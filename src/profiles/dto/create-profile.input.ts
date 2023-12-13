@@ -11,5 +11,5 @@ export class CreateProfileInput {
   @Field(() => String, { description: 'User ID' })
   @IsNotEmpty()
   @IsString()
-  user!: number;
+  userId!: string;
 }
