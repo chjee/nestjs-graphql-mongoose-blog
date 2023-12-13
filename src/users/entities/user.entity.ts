@@ -33,17 +33,17 @@ export class User {
   role!: string;
 
   @Prop({ type: Date, default: Date.now })
-  @Field(() => Date, { description: 'User created date' })
+  @Field(() => Date, { nullable: true, description: 'User created date' })
   createdAt?: Date;
 
   @Prop({ type: Date, default: Date.now })
-  @Field(() => Date, { description: 'User updated date' })
+  @Field(() => Date, { nullable: true, description: 'User updated date' })
   updatedAt?: Date;
 
-  @Field(() => [Post], { description: 'User posts' })
+  @Field(() => [Post], { nullable: true, description: 'User posts' })
   posts?: Post[];
 
-  @Field(() => Profile, { description: 'User profile' })
+  @Field(() => Profile, { nullable: true, description: 'User profile' })
   profile?: Profile;
 }
 
