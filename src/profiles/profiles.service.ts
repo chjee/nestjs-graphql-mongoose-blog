@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateProfileInput } from './dto/create-profile.input';
 import { UpdateProfileInput } from './dto/update-profile.input';
 import { InjectModel } from '@nestjs/mongoose';
@@ -15,18 +15,23 @@ export class ProfilesService {
     return user.save();
   }
 
-  async findAll(params: { skip?: number; limit?: number }): Promise<Profile[]> {
-    const { skip, limit } = params;
+  async findAll(params: {
+    skip?: number;
+    limit?: number;
+    where?: object;
+    orderBy?: string;
+  }): Promise<Profile[] | null> {
+    const { skip, limit, where, orderBy } = params;
     const count = await this.profiles.countDocuments().exec();
 
     if (count <= 0) {
-      this.logger.error('No profiles found');
-      throw new NotFoundException('No profiles found');
+      this.logger.log('No profiles found');
+      return null;
     }
 
     const profiles = await this.profiles
-      .find()
-      .sort('-createdAt')
+      .find(where || {})
+      .sort(orderBy || '-createdAt')
       .skip(skip || 0)
       .limit(limit || 10)
       .exec();
@@ -34,30 +39,21 @@ export class ProfilesService {
     return profiles;
   }
 
-  async findOne(id: string): Promise<Profile> {
-    const profile = await this.profiles.findById({ _id: id }).exec();
-
-    if (!profile) {
-      this.logger.error(`Profile with id ${id} not found`);
-      throw new NotFoundException(`Profile with id ${id} not found`);
-    }
-    return profile;
+  async findOne(where: object): Promise<Profile | null> {
+    return this.profiles.findOne(where).exec();
   }
 
-  async update(
-    id: string,
-    updateProfileInput: UpdateProfileInput,
-  ): Promise<any> {
+  async update(params: {
+    where: object;
+    data: UpdateProfileInput;
+  }): Promise<any> {
+    const { where, data } = params;
     return this.profiles
-      .findByIdAndUpdate(
-        { _id: id },
-        { $set: updateProfileInput },
-        { new: true },
-      )
+      .findOneAndUpdate(where, { $set: data }, { new: true })
       .exec();
   }
 
-  async remove(id: string): Promise<any> {
-    return this.profiles.findByIdAndUpdate({ _id: id }).exec();
+  async remove(where: object): Promise<any> {
+    return this.profiles.findOneAndDelete(where).exec();
   }
 }
