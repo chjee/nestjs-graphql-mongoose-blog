@@ -16,5 +16,6 @@ export class CreatePostInput {
   @Field(() => String, { description: 'User ID' })
   @IsNotEmpty()
   @IsString()
-  user!: string;
+  @Length(2, 60)
+  userId!: string;
 }
