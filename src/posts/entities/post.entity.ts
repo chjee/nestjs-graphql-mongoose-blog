@@ -13,6 +13,9 @@ export class Post {
   @Field(() => String, { description: 'Post ID' })
   _id!: string;
 
+  @Field(() => String, { description: 'Post slug' })
+  id!: string;
+
   @Prop({ type: String, required: true, trim: true })
   @Field(() => String, { description: 'Post Title' })
   title!: string;
@@ -21,15 +24,23 @@ export class Post {
   @Field(() => Boolean, { defaultValue: false, description: 'Post Published' })
   published!: boolean;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   @Field(() => String, { description: 'User ID' })
   userId!: string;
+
+  @Prop({ type: Date, default: Date.now })
+  @Field(() => Date, { nullable: true, description: 'Post created date' })
+  createdAt?: Date;
+
+  @Prop({ type: Date, default: Date.now })
+  @Field(() => Date, { nullable: true, description: 'Post updated date' })
+  updatedAt?: Date;
 
   @Field(() => User, { nullable: true, description: 'User Object' })
   user?: User | null;
 
   @Field(() => [Category], { nullable: true, description: 'Post Categories' })
-  categories?: [Category] | null;
+  categories?: Category[] | null;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
