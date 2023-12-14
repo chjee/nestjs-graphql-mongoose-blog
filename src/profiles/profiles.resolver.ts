@@ -33,7 +33,7 @@ export class ProfilesResolver {
   async findAll(
     @Args('skip', { type: () => Int, nullable: true }) skip?: number,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<Profile[] | null> {
+  ): Promise<Profile[]> {
     return this.profilesService.findAll({
       skip: skip,
       limit: limit,

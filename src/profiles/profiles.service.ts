@@ -20,13 +20,13 @@ export class ProfilesService {
     limit?: number;
     where?: object;
     orderBy?: string;
-  }): Promise<Profile[] | null> {
+  }): Promise<Profile[]> {
     const { skip, limit, where, orderBy } = params;
     const count = await this.profiles.countDocuments().exec();
 
     if (count <= 0) {
       this.logger.log('No profiles found');
-      return null;
+      return [];
     }
 
     const profiles = await this.profiles
