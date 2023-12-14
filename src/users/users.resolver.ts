@@ -36,7 +36,7 @@ export class UsersResolver {
   async findAll(
     @Args('skip', { type: () => Int, nullable: true }) skip?: number,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<User[] | null> {
+  ): Promise<User[]> {
     return this.usersService.findAll({
       skip: skip,
       limit: limit,

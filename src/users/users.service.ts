@@ -31,13 +31,13 @@ export class UsersService {
     limit?: number;
     where?: object;
     orderBy?: string;
-  }): Promise<User[] | null> {
+  }): Promise<User[]> {
     const { skip, limit, where, orderBy } = params;
     const count = await this.users.countDocuments().exec();
 
     if (count <= 0) {
       this.logger.log('No users found');
-      return null;
+      return [];
     }
 
     const users = await this.users
