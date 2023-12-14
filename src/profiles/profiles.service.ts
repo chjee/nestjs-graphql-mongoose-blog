@@ -22,7 +22,7 @@ export class ProfilesService {
     orderBy?: string;
   }): Promise<Profile[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.profiles.countDocuments().exec();
+    const count = await this.profiles.countDocuments(where || {}).exec();
 
     if (count <= 0) {
       this.logger.log('No profiles found');

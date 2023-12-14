@@ -22,7 +22,7 @@ export class PostsService {
     orderBy?: string;
   }): Promise<Post[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.posts.countDocuments().exec();
+    const count = await this.posts.countDocuments(where || {}).exec();
 
     if (count <= 0) {
       this.logger.log('No posts found');

@@ -33,7 +33,7 @@ export class UsersService {
     orderBy?: string;
   }): Promise<User[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.users.countDocuments().exec();
+    const count = await this.users.countDocuments(where || {}).exec();
 
     if (count <= 0) {
       this.logger.log('No users found');
