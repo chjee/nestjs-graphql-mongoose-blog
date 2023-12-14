@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateCategoryInput } from './dto/create-category.input';
 import { UpdateCategoryInput } from './dto/update-category.input';
 import { Model } from 'mongoose';
@@ -20,18 +20,20 @@ export class CategoriesService {
   async findAll(params: {
     skip?: number;
     limit?: number;
+    where?: object;
+    orderBy?: string;
   }): Promise<Category[]> {
-    const { skip, limit } = params;
-    const count = await this.categories.countDocuments().exec();
+    const { skip, limit, where, orderBy } = params;
+    const count = await this.categories.countDocuments(where || {}).exec();
 
     if (count <= 0) {
       this.logger.error('No categories found');
-      throw new NotFoundException('No categories found');
+      return [];
     }
 
     const categories = await this.categories
-      .find()
-      .sort('-createdAt')
+      .find(where || {})
+      .sort(orderBy || '-createdAt')
       .skip(skip || 0)
       .limit(limit || 10)
       .exec();
@@ -39,31 +41,21 @@ export class CategoriesService {
     return categories;
   }
 
-  async findOne(id: string): Promise<Category> {
-    const category = await this.categories.findById({ _id: id }).exec();
-
-    if (!category) {
-      this.logger.error(`Category with id ${id} not found`);
-      throw new NotFoundException(`Category with id ${id} not found`);
-    }
-
-    return category;
+  async findOne(where: object): Promise<Category | null> {
+    return this.categories.findById(where).exec();
   }
 
-  async update(
-    id: string,
-    updateCategoryInput: UpdateCategoryInput,
-  ): Promise<any> {
+  async update(params: {
+    where: object;
+    data: UpdateCategoryInput;
+  }): Promise<any> {
+    const { where, data } = params;
     return this.categories
-      .findByIdAndUpdate(
-        { _id: id },
-        { $set: updateCategoryInput },
-        { new: true },
-      )
+      .findByIdAndUpdate(where, { $set: data }, { new: true })
       .exec();
   }
 
-  async remove(id: string): Promise<any> {
-    return this.categories.findByIdAndDelete({ _id: id }).exec();
+  async remove(where: object): Promise<any> {
+    return this.categories.findByIdAndDelete(where).exec();
   }
 }

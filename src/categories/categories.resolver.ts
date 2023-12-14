@@ -27,8 +27,10 @@ export class CategoriesResolver {
   }
 
   @Query(() => Category, { name: 'getCategoryById' })
-  async findOne(@Args('id', { type: () => ID }) id: string): Promise<Category> {
-    return this.categoriesService.findOne(id);
+  async findOne(
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<Category | null> {
+    return this.categoriesService.findOne({ _id: id });
   }
 
   @Mutation(() => Category)
@@ -36,13 +38,16 @@ export class CategoriesResolver {
     @Args('id', { type: () => ID }) id: string,
     @Args('updateCategoryInput') updateCategoryInput: UpdateCategoryInput,
   ): Promise<any> {
-    return this.categoriesService.update(id, updateCategoryInput);
+    return this.categoriesService.update({
+      where: { _id: id },
+      data: updateCategoryInput,
+    });
   }
 
   @Mutation(() => Category)
   async removeCategory(
     @Args('id', { type: () => ID }) id: string,
   ): Promise<any> {
-    return this.categoriesService.remove(id);
+    return this.categoriesService.remove({ _id: id });
   }
 }
