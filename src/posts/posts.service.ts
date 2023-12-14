@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreatePostInput } from './dto/create-post.input';
 import { UpdatePostInput } from './dto/update-post.input';
 import { Model } from 'mongoose';
@@ -15,18 +15,23 @@ export class PostsService {
     return post.save();
   }
 
-  async findAll(params: { skip?: number; limit?: number }): Promise<Post[]> {
-    const { skip, limit } = params;
+  async findAll(params: {
+    skip?: number;
+    limit?: number;
+    where?: object;
+    orderBy?: string;
+  }): Promise<Post[]> {
+    const { skip, limit, where, orderBy } = params;
     const count = await this.posts.countDocuments().exec();
 
     if (count <= 0) {
-      this.logger.error('No posts found');
-      throw new NotFoundException('No posts found');
+      this.logger.log('No posts found');
+      return [];
     }
 
     const posts = await this.posts
-      .find()
-      .sort('-createdAt')
+      .find(where || {})
+      .sort(orderBy || '-createdAt')
       .skip(skip || 0)
       .limit(limit || 10)
       .exec();
@@ -34,24 +39,18 @@ export class PostsService {
     return posts;
   }
 
-  async findOne(id: string): Promise<Post> {
-    const post = await this.posts.findById({ _id: id }).exec();
-
-    if (!post) {
-      this.logger.error(`Post with id ${id} not found`);
-      throw new NotFoundException(`Post with id ${id} not found`);
-    }
-
-    return post;
+  async findOne(where: object): Promise<Post | null> {
+    return this.posts.findOne(where).exec();
   }
 
-  async update(id: string, updatePostInput: UpdatePostInput): Promise<any> {
+  async update(params: { where: object; data: UpdatePostInput }): Promise<any> {
+    const { where, data } = params;
     return this.posts
-      .findByIdAndUpdate({ _id: id }, { $set: updatePostInput }, { new: true })
+      .findOneAndUpdate(where, { $set: data }, { new: true })
       .exec();
   }
 
-  async remove(id: string): Promise<any> {
-    return this.posts.findByIdAndDelete({ _id: id }).exec();
+  async remove(where: object): Promise<any> {
+    return this.posts.findOneAndDelete(where).exec();
   }
 }
