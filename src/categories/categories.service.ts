@@ -27,7 +27,7 @@ export class CategoriesService {
     const count = await this.categories.countDocuments(where || {}).exec();
 
     if (count <= 0) {
-      this.logger.error('No categories found');
+      this.logger.log('No categories found');
       return [];
     }
 
