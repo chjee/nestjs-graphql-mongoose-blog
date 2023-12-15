@@ -14,12 +14,15 @@ import { CreatePostInput } from './dto/create-post.input';
 import { UpdatePostInput } from './dto/update-post.input';
 import { UsersService } from './../users/users.service';
 import { User } from './../users/entities/user.entity';
+import { CategoriesService } from './../categories/categories.service';
+import { Category } from './../categories/entities/category.entity';
 
 @Resolver(() => Post)
 export class PostsResolver {
   constructor(
     private readonly postsService: PostsService,
     private readonly usersService: UsersService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   @Mutation(() => Post)
@@ -50,6 +53,13 @@ export class PostsResolver {
   @ResolveField(() => Post)
   async user(@Parent() { userId }: Post): Promise<User | null> {
     return this.usersService.findOne({ _id: userId });
+  }
+
+  @ResolveField(() => Post)
+  async categories(@Parent() { categoryIds }: Post): Promise<Category[]> {
+    return this.categoriesService.findAll({
+      where: { _id: { $in: categoryIds } },
+    });
   }
 
   @Mutation(() => Post)
