@@ -28,6 +28,10 @@ export class Post {
   @Field(() => String, { description: 'User ID' })
   userId!: string;
 
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Category' }] })
+  @Field(() => [String], { nullable: true, description: 'Post Categories' })
+  categoryIds?: string[];
+
   @Prop({ type: Date, default: Date.now })
   @Field(() => Date, { nullable: true, description: 'Post created date' })
   createdAt?: Date;

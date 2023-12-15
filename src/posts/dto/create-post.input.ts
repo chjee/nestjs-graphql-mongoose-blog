@@ -18,4 +18,9 @@ export class CreatePostInput {
   @IsString()
   @Length(2, 60)
   userId!: string;
+
+  @Field(() => [String], { nullable: true, description: 'Post Categories' })
+  @IsString({ each: true })
+  @Length(2, 60, { each: true })
+  categoryIds?: string[];
 }
