@@ -13,7 +13,7 @@ import { User } from './entities/user.entity';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { PostsService } from './../posts/posts.service';
-import { Post } from 'src/posts/entities/post.entity';
+import { Post } from './../posts/entities/post.entity';
 import { ProfilesService } from './../profiles/profiles.service';
 import { Profile } from './../profiles/entities/profile.entity';
 

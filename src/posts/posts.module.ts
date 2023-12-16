@@ -9,7 +9,7 @@ import {
   Category,
   CategorySchema,
 } from './../categories/entities/category.entity';
-import { CategoriesService } from 'src/categories/categories.service';
+import { CategoriesService } from './../categories/categories.service';
 
 @Module({
   imports: [
