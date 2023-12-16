@@ -7,6 +7,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProfilesModule } from './profiles/profiles.module';
 import { PostsModule } from './posts/posts.module';
 import { CategoriesModule } from './categories/categories.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -26,10 +28,15 @@ import { CategoriesModule } from './categories/categories.module';
         uri: configService.get<string>('MONGO_URI'),
       }),
     }),
+    AuthModule,
     UsersModule,
     ProfilesModule,
     PostsModule,
     CategoriesModule,
+  ],
+  providers: [
+    { provide: 'APP_GUARD', useExisting: JwtAuthGuard },
+    JwtAuthGuard,
   ],
 })
 export class AppModule {}

@@ -9,6 +9,7 @@ import { Profile, ProfileSchema } from './../profiles/entities/profile.entity';
 import { ProfilesService } from './../profiles/profiles.service';
 
 @Module({
+  exports: [UsersService],
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
