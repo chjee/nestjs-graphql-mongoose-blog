@@ -43,7 +43,7 @@ export class UsersResolver {
     });
   }
 
-  @Query(() => User, { name: 'getUserById' })
+  @Query(() => User, { nullable: true, name: 'getUserById' })
   async findOne(
     @Args('id', { type: () => ID }) id: string,
   ): Promise<User | null> {
@@ -62,7 +62,7 @@ export class UsersResolver {
     return this.profilesService.findOne({ userId: id });
   }
 
-  @Mutation(() => User)
+  @Mutation(() => User, { nullable: true, name: 'updateUser' })
   async updateUser(
     @Args('id', { type: () => ID }) id: string,
     @Args('updateUserInput') updateUserInput: UpdateUserInput,
@@ -73,7 +73,7 @@ export class UsersResolver {
     });
   }
 
-  @Mutation(() => User)
+  @Mutation(() => User, { nullable: true, name: 'removeUser' })
   async removeUser(@Args('id', { type: () => ID }) id: string): Promise<any> {
     return this.usersService.remove({ _id: id });
   }

@@ -26,14 +26,14 @@ export class CategoriesResolver {
     });
   }
 
-  @Query(() => Category, { name: 'getCategoryById' })
+  @Query(() => Category, { nullable: true, name: 'getCategoryById' })
   async findOne(
     @Args('id', { type: () => ID }) id: string,
   ): Promise<Category | null> {
     return this.categoriesService.findOne({ _id: id });
   }
 
-  @Mutation(() => Category)
+  @Mutation(() => Category, { nullable: true, name: 'updateCategory' })
   async updateCategory(
     @Args('id', { type: () => ID }) id: string,
     @Args('updateCategoryInput') updateCategoryInput: UpdateCategoryInput,
@@ -44,7 +44,7 @@ export class CategoriesResolver {
     });
   }
 
-  @Mutation(() => Category)
+  @Mutation(() => Category, { nullable: true, name: 'removeCategory' })
   async removeCategory(
     @Args('id', { type: () => ID }) id: string,
   ): Promise<any> {
