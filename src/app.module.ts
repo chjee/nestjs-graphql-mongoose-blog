@@ -9,6 +9,7 @@ import { PostsModule } from './posts/posts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -37,7 +38,9 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
   ],
   providers: [
     { provide: 'APP_GUARD', useExisting: JwtAuthGuard },
+    { provide: 'APP_GUARD', useExisting: RolesGuard },
     JwtAuthGuard,
+    RolesGuard,
   ],
 })
 export class AppModule {}
