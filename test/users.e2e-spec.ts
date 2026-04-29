@@ -82,6 +82,26 @@ describe('UsersResolver (e2e)', () => {
       .expect({ data: { getUsers: usersService.findAll() } });
   });
 
+  it('rejects invalid pagination', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .send({
+        query: `
+          query {
+            getUsers(skip: -1, limit: 101)
+            {
+              id
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body.data).toBeNull();
+        expect(body.errors?.[0]?.message).toBe('Bad Request Exception');
+      });
+  });
+
   it('findOne', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')

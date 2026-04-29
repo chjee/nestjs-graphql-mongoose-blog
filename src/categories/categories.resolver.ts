@@ -1,8 +1,9 @@
-import { Resolver, Query, Mutation, Args, Int, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { CategoriesService } from './categories.service';
 import { Category } from './entities/category.entity';
 import { CreateCategoryInput } from './dto/create-category.input';
 import { UpdateCategoryInput } from './dto/update-category.input';
+import { PaginationArgs } from './../common/dto/pagination.args';
 
 @Resolver(() => Category)
 export class CategoriesResolver {
@@ -16,10 +17,7 @@ export class CategoriesResolver {
   }
 
   @Query(() => [Category], { name: 'getCategories' })
-  async findAll(
-    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
-    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<Category[]> {
+  async findAll(@Args() { skip, limit }: PaginationArgs): Promise<Category[]> {
     return this.categoriesService.findAll({
       skip: skip,
       limit: limit,
