@@ -47,7 +47,7 @@ export class ProfilesResolver {
     return this.profilesService.findOne({ _id: id });
   }
 
-  @ResolveField(() => Profile)
+  @ResolveField(() => User, { nullable: true })
   async user(@Parent() { userId }: Profile): Promise<User | null> {
     return this.usersService.findOne({ _id: userId });
   }

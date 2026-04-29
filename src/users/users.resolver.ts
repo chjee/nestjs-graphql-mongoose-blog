@@ -16,6 +16,7 @@ import { PostsService } from './../posts/posts.service';
 import { Post } from './../posts/entities/post.entity';
 import { ProfilesService } from './../profiles/profiles.service';
 import { Profile } from './../profiles/entities/profile.entity';
+import { Public } from './../common/decorators/public.decorator';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -26,6 +27,7 @@ export class UsersResolver {
   ) {}
 
   @Mutation(() => User)
+  @Public()
   async createUser(
     @Args('createUserInput') createUserInput: CreateUserInput,
   ): Promise<User> {
@@ -50,14 +52,14 @@ export class UsersResolver {
     return this.usersService.findOne({ _id: id });
   }
 
-  @ResolveField(() => User)
+  @ResolveField(() => [Post], { nullable: true })
   async posts(@Parent() { id }: User): Promise<Post[] | null> {
     return this.postsService.findAll({
       where: { userId: id },
     });
   }
 
-  @ResolveField(() => User)
+  @ResolveField(() => Profile, { nullable: true })
   async profile(@Parent() { id }: User): Promise<Profile | null> {
     return this.profilesService.findOne({ userId: id });
   }

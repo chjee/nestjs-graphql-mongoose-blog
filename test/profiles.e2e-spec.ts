@@ -1,9 +1,9 @@
 import * as request from 'supertest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { ProfilesService } from '../src/profiles/profiles.service';
+import { createGraphqlTestApp } from './graphql-test-app';
+import { ProfilesResolver } from '../src/profiles/profiles.resolver';
+import { UsersService } from '../src/users/users.service';
 
 describe('ProfilesResolver (e2e)', () => {
   let app: INestApplication;
@@ -14,6 +14,9 @@ describe('ProfilesResolver (e2e)', () => {
     update: () => mockProfile,
     remove: () => mockProfile,
   };
+  const usersService = {
+    findOne: () => null,
+  };
 
   const mockProfile = {
     id: '6576d6d44441e8ea8a38b5a8',
@@ -22,17 +25,11 @@ describe('ProfilesResolver (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideProvider(ProfilesService)
-      .useValue(profilesService)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await createGraphqlTestApp([
+      ProfilesResolver,
+      { provide: ProfilesService, useValue: profilesService },
+      { provide: UsersService, useValue: usersService },
+    ]);
   });
 
   it('createProfile', async () => {
@@ -138,6 +135,8 @@ describe('ProfilesResolver (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 });

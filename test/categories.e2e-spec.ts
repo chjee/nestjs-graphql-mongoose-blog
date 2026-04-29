@@ -1,9 +1,8 @@
 import * as request from 'supertest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { CategoriesService } from '../src/categories/categories.service';
+import { createGraphqlTestApp } from './graphql-test-app';
+import { CategoriesResolver } from '../src/categories/categories.resolver';
 
 describe('CategorysResolver (e2e)', () => {
   let app: INestApplication;
@@ -23,17 +22,10 @@ describe('CategorysResolver (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideProvider(CategoriesService)
-      .useValue(categoriesService)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await createGraphqlTestApp([
+      CategoriesResolver,
+      { provide: CategoriesService, useValue: categoriesService },
+    ]);
   });
 
   it('createCategory', async () => {
@@ -133,6 +125,8 @@ describe('CategorysResolver (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 });

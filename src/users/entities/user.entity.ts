@@ -25,7 +25,6 @@ export class User {
   name!: string;
 
   @Prop({ type: String, required: true, trim: true })
-  @Field(() => String, { description: 'User password' })
   password!: string;
 
   @Prop({ type: String, required: true, trim: true, default: 'USER' })
