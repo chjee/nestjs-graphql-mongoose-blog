@@ -51,7 +51,9 @@ $ npm run test:cov
 $ npm run test:e2e
 
 # opt-in MongoDB-backed smoke test
-$ MONGO_URI=mongodb://127.0.0.1:27017/blog-local npm run test:e2e:mongo
+$ MONGO_URI=mongodb://127.0.0.1:27017/blog-local \
+  JWT_SECRET=MDBjMWJlMzc4M2JhNGExY2FmNTRkZmU0NjlhNTRjYmY= \
+  npm run test:e2e:mongo
 ```
 
 The default e2e suite uses a lightweight GraphQL test module and mocked services.
@@ -61,6 +63,9 @@ test when you need to verify the real `AppModule` with `MONGO_URI`.
 `npm run test:e2e:mongo` starts the real `AppModule`, connects to `MONGO_URI`,
 and verifies the GraphQL endpoint through the public `login` mutation. It is
 opt-in so the regular test suite does not require a running MongoDB instance.
+When using the sibling `docker-local-infra` repository, start MongoDB with
+`make up-mongodb` and run the smoke test with
+`MONGO_URI=mongodb://devuser:devpass3992@127.0.0.1:27017/blog`.
 
 ## .env file
 
