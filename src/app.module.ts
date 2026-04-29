@@ -21,6 +21,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
       driver: ApolloDriver,
       autoSchemaFile: true,
       sortSchema: true,
+      context: ({ req }) => ({ req }),
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],

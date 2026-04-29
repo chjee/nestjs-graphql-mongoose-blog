@@ -1,9 +1,10 @@
 import * as request from 'supertest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { UsersService } from '../src/users/users.service';
+import { createGraphqlTestApp } from './graphql-test-app';
+import { UsersResolver } from '../src/users/users.resolver';
+import { PostsService } from '../src/posts/posts.service';
+import { ProfilesService } from '../src/profiles/profiles.service';
 
 describe('UsersResolver (e2e)', () => {
   let app: INestApplication;
@@ -14,6 +15,12 @@ describe('UsersResolver (e2e)', () => {
     update: () => mockUser,
     remove: () => mockUser,
   };
+  const postsService = {
+    findAll: () => [],
+  };
+  const profilesService = {
+    findOne: () => null,
+  };
 
   const mockUser = {
     id: '6576d6d44441e8ea8a38b5a8',
@@ -23,17 +30,12 @@ describe('UsersResolver (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideProvider(UsersService)
-      .useValue(usersService)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await createGraphqlTestApp([
+      UsersResolver,
+      { provide: UsersService, useValue: usersService },
+      { provide: PostsService, useValue: postsService },
+      { provide: ProfilesService, useValue: profilesService },
+    ]);
   });
 
   it('createUser', async () => {
@@ -46,7 +48,6 @@ describe('UsersResolver (e2e)', () => {
               email: "andrew@prisma.io"
               name: "Andrew"
               password: "whoami"
-              role: "ADMIN"
             })
             {
               id
@@ -146,6 +147,8 @@ describe('UsersResolver (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 });

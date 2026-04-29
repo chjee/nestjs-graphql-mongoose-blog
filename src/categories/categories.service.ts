@@ -34,15 +34,15 @@ export class CategoriesService {
     const categories = await this.categories
       .find(where || {})
       .sort(orderBy || '-createdAt')
-      .skip(skip || 0)
-      .limit(limit || 10)
+      .skip(Math.max(skip ?? 0, 0))
+      .limit(Math.min(Math.max(limit ?? 10, 1), 100))
       .exec();
 
     return categories;
   }
 
   async findOne(where: object): Promise<Category | null> {
-    return this.categories.findById(where).exec();
+    return this.categories.findOne(where).exec();
   }
 
   async update(params: {
@@ -51,11 +51,11 @@ export class CategoriesService {
   }): Promise<any> {
     const { where, data } = params;
     return this.categories
-      .findByIdAndUpdate(where, { $set: data }, { new: true })
+      .findOneAndUpdate(where, { $set: data }, { new: true })
       .exec();
   }
 
   async remove(where: object): Promise<any> {
-    return this.categories.findByIdAndDelete(where).exec();
+    return this.categories.findOneAndDelete(where).exec();
   }
 }

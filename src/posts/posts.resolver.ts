@@ -50,13 +50,17 @@ export class PostsResolver {
     return this.postsService.findOne({ _id: id });
   }
 
-  @ResolveField(() => Post)
+  @ResolveField(() => User, { nullable: true })
   async user(@Parent() { userId }: Post): Promise<User | null> {
     return this.usersService.findOne({ _id: userId });
   }
 
-  @ResolveField(() => Post)
+  @ResolveField(() => [Category], { nullable: true })
   async categories(@Parent() { categoryIds }: Post): Promise<Category[]> {
+    if (!categoryIds?.length) {
+      return [];
+    }
+
     return this.categoriesService.findAll({
       where: { _id: { $in: categoryIds } },
     });

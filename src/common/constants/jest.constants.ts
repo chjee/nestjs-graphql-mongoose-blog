@@ -85,7 +85,6 @@ export const createUserInput: CreateUserInput = {
   email: 'andrew@prisma.io',
   name: 'Andrew',
   password: 'whoami',
-  role: 'ADMIN',
 };
 
 export const updateUserInput: UpdateUserInput = {

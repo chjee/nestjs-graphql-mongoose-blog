@@ -18,11 +18,14 @@ export class UsersService {
   async create(createUserInput: CreateUserInput): Promise<User> {
     const hashedPassword = await bcrypt.hash(
       createUserInput.password,
-      this.configService.get<number>('SALT_ROUND', 10),
+      this.configService.get<number>('SALT_ROUNDS', 10),
     );
-    createUserInput.password = hashedPassword;
 
-    const user = new this.users(createUserInput);
+    const user = new this.users({
+      ...createUserInput,
+      password: hashedPassword,
+      role: 'USER',
+    });
     return user.save();
   }
 
@@ -43,8 +46,8 @@ export class UsersService {
     const users = await this.users
       .find(where || {})
       .sort(orderBy || '-createdAt')
-      .skip(skip || 0)
-      .limit(limit || 10)
+      .skip(Math.max(skip ?? 0, 0))
+      .limit(Math.min(Math.max(limit ?? 10, 1), 100))
       .exec();
 
     return users;

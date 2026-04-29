@@ -1,9 +1,10 @@
 import * as request from 'supertest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { PostsService } from '../src/posts/posts.service';
+import { createGraphqlTestApp } from './graphql-test-app';
+import { PostsResolver } from '../src/posts/posts.resolver';
+import { UsersService } from '../src/users/users.service';
+import { CategoriesService } from '../src/categories/categories.service';
 
 describe('PostsResolver (e2e)', () => {
   let app: INestApplication;
@@ -14,6 +15,12 @@ describe('PostsResolver (e2e)', () => {
     update: () => mockPost,
     remove: () => mockPost,
   };
+  const usersService = {
+    findOne: () => null,
+  };
+  const categoriesService = {
+    findAll: () => [],
+  };
 
   const mockPost = {
     id: '6576d6d44441e8ea8a38b5a8',
@@ -23,17 +30,12 @@ describe('PostsResolver (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideProvider(PostsService)
-      .useValue(postsService)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await createGraphqlTestApp([
+      PostsResolver,
+      { provide: PostsService, useValue: postsService },
+      { provide: UsersService, useValue: usersService },
+      { provide: CategoriesService, useValue: categoriesService },
+    ]);
   });
 
   it('createPost', async () => {
@@ -143,6 +145,8 @@ describe('PostsResolver (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 });

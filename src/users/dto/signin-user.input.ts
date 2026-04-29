@@ -1,12 +1,8 @@
-import { InputType, Field, PickType, ObjectType } from '@nestjs/graphql';
-import { User } from './../entities/user.entity';
+import { InputType, Field, ObjectType } from '@nestjs/graphql';
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 
 @InputType({ description: 'SignIn user input' })
-export class SignInInput extends PickType(User, [
-  'email',
-  'password',
-] as const) {
+export class SignInInput {
   @Field(() => String, { description: 'User Email' })
   @IsNotEmpty()
   @IsEmail()
