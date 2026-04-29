@@ -15,6 +15,10 @@ describeMongoSmoke('Mongo-backed AppModule smoke (e2e)', () => {
       throw new Error('MONGO_URI is required for npm run test:e2e:mongo');
     }
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is required for npm run test:e2e:mongo');
+    }
+
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
