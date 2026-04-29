@@ -13,8 +13,8 @@
     "typescript"
   ],
   "engines": {
-    "node": ">=18.17.1",
-    "npm": ">=9.6.7"
+    "node": ">=20",
+    "npm": ">=10"
   },
   "scripts": {
     "build": "nest build",
