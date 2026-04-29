@@ -130,8 +130,7 @@ describe('UsersResolver (e2e)', () => {
           mutation {
             updateUser(id: "6576d6d44441e8ea8a38b5a8", 
             updateUserInput: {
-              name: "Andy",
-              role: "USER"
+              name: "Andy"
             })
             {
               id
@@ -144,6 +143,29 @@ describe('UsersResolver (e2e)', () => {
       })
       .expect(HttpStatus.OK)
       .expect({ data: { updateUser: usersService.update() } });
+  });
+
+  it('updateUserRole', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .send({
+        query: `
+          mutation {
+            updateUserRole(id: "6576d6d44441e8ea8a38b5a8",
+            updateUserRoleInput: {
+              role: "USER"
+            })
+            {
+              id
+              name
+              email
+              role
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect({ data: { updateUserRole: usersService.update() } });
   });
 
   it('removeUser', async () => {

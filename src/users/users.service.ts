@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { UpdateUserRoleInput } from './dto/update-user-role.input';
 import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
@@ -57,7 +58,10 @@ export class UsersService {
     return this.users.findOne(where).exec();
   }
 
-  async update(params: { where: object; data: UpdateUserInput }): Promise<any> {
+  async update(params: {
+    where: object;
+    data: UpdateUserInput | UpdateUserRoleInput;
+  }): Promise<any> {
     const { where, data } = params;
     return this.users
       .findOneAndUpdate(where, { $set: data }, { new: true })

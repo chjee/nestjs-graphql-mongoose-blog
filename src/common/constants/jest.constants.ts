@@ -10,6 +10,7 @@ import { CreateProfileInput } from './../../profiles/dto/create-profile.input';
 import { UpdateProfileInput } from './../../profiles/dto/update-profile.input';
 import { CreateUserInput } from './../../users/dto/create-user.input';
 import { UpdateUserInput } from './../../users/dto/update-user.input';
+import { UpdateUserRoleInput } from './../../users/dto/update-user-role.input';
 
 export const category: Category = {
   _id: '6576d6d44441e8ea8a38b5a8',
@@ -88,5 +89,9 @@ export const createUserInput: CreateUserInput = {
 };
 
 export const updateUserInput: UpdateUserInput = {
+  name: 'Andy',
+};
+
+export const updateUserRoleInput: UpdateUserRoleInput = {
   role: 'USER',
 };

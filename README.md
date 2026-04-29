@@ -76,6 +76,7 @@ JWT_SECRET=MDBjMWJlMzc4M2JhNGExY2FmNTRkZmU0NjlhNTRjYmY=
 
 - `login` and `createUser` are public GraphQL mutations.
 - `createUser` never accepts a client-provided role. New users are created with the `USER` role by the server.
+- User profile updates and role changes are separate mutations. `updateUserRole` requires an `ADMIN` JWT role.
 - `User.password` is stored for authentication but is not exposed in the GraphQL output type.
 - List queries accept flat pagination arguments: `skip` and `limit`.
 - Pagination constraints are shared across list queries: `skip >= 0`, `1 <= limit <= 100`.

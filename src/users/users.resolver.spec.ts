@@ -6,6 +6,7 @@ import {
   users,
   createUserInput,
   updateUserInput,
+  updateUserRoleInput,
   posts,
   profile,
 } from '../common/constants/jest.constants';
@@ -96,6 +97,18 @@ describe('UsersResolver', () => {
         await usersResolver.updateUser(
           '6576d6d44441e8ea8a38b5a8',
           updateUserInput,
+        ),
+      ).toBe(user);
+    });
+  });
+
+  describe('updateUserRole', () => {
+    it('should return a user with an updated role', async () => {
+      jest.spyOn(usersService, 'update').mockImplementation(async () => user);
+      expect(
+        await usersResolver.updateUserRole(
+          '6576d6d44441e8ea8a38b5a8',
+          updateUserRoleInput,
         ),
       ).toBe(user);
     });
