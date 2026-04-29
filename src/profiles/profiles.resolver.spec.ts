@@ -57,7 +57,9 @@ describe('ProfilesResolver', () => {
       jest
         .spyOn(profilesService, 'findAll')
         .mockImplementation(async () => profiles);
-      expect(await profilesResolver.findAll(0, 5)).toBe(profiles);
+      expect(await profilesResolver.findAll({ skip: 0, limit: 5 })).toBe(
+        profiles,
+      );
     });
   });
 

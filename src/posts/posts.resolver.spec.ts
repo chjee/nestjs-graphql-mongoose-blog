@@ -60,7 +60,7 @@ describe('PostsResolver', () => {
   describe('findAll', () => {
     it('should return an array of posts', async () => {
       jest.spyOn(postsService, 'findAll').mockImplementation(async () => posts);
-      expect(await postsResolver.findAll(0, 5)).toBe(posts);
+      expect(await postsResolver.findAll({ skip: 0, limit: 5 })).toBe(posts);
     });
   });
 

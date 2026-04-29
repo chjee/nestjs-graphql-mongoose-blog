@@ -3,7 +3,6 @@ import {
   Query,
   Mutation,
   Args,
-  Int,
   ID,
   Parent,
   ResolveField,
@@ -16,6 +15,7 @@ import { UsersService } from './../users/users.service';
 import { User } from './../users/entities/user.entity';
 import { CategoriesService } from './../categories/categories.service';
 import { Category } from './../categories/entities/category.entity';
+import { PaginationArgs } from './../common/dto/pagination.args';
 
 @Resolver(() => Post)
 export class PostsResolver {
@@ -33,10 +33,7 @@ export class PostsResolver {
   }
 
   @Query(() => [Post], { name: 'getPosts' })
-  async findAll(
-    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
-    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<Post[]> {
+  async findAll(@Args() { skip, limit }: PaginationArgs): Promise<Post[]> {
     return this.postsService.findAll({
       skip: skip,
       limit: limit,
@@ -50,13 +47,17 @@ export class PostsResolver {
     return this.postsService.findOne({ _id: id });
   }
 
-  @ResolveField(() => Post)
+  @ResolveField(() => User, { nullable: true })
   async user(@Parent() { userId }: Post): Promise<User | null> {
     return this.usersService.findOne({ _id: userId });
   }
 
-  @ResolveField(() => Post)
+  @ResolveField(() => [Category], { nullable: true })
   async categories(@Parent() { categoryIds }: Post): Promise<Category[]> {
+    if (!categoryIds?.length) {
+      return [];
+    }
+
     return this.categoriesService.findAll({
       where: { _id: { $in: categoryIds } },
     });

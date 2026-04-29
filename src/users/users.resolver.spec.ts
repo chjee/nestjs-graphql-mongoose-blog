@@ -6,6 +6,7 @@ import {
   users,
   createUserInput,
   updateUserInput,
+  updateUserRoleInput,
   posts,
   profile,
 } from '../common/constants/jest.constants';
@@ -60,7 +61,7 @@ describe('UsersResolver', () => {
   describe('findAll', () => {
     it('should return an array of users', async () => {
       jest.spyOn(usersService, 'findAll').mockImplementation(async () => users);
-      expect(await usersResolver.findAll(0, 5)).toBe(users);
+      expect(await usersResolver.findAll({ skip: 0, limit: 5 })).toBe(users);
     });
   });
 
@@ -96,6 +97,18 @@ describe('UsersResolver', () => {
         await usersResolver.updateUser(
           '6576d6d44441e8ea8a38b5a8',
           updateUserInput,
+        ),
+      ).toBe(user);
+    });
+  });
+
+  describe('updateUserRole', () => {
+    it('should return a user with an updated role', async () => {
+      jest.spyOn(usersService, 'update').mockImplementation(async () => user);
+      expect(
+        await usersResolver.updateUserRole(
+          '6576d6d44441e8ea8a38b5a8',
+          updateUserRoleInput,
         ),
       ).toBe(user);
     });

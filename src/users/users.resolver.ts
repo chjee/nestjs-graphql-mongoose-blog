@@ -3,7 +3,6 @@ import {
   Query,
   Mutation,
   Args,
-  Int,
   ID,
   ResolveField,
   Parent,
@@ -12,10 +11,14 @@ import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { UpdateUserRoleInput } from './dto/update-user-role.input';
 import { PostsService } from './../posts/posts.service';
 import { Post } from './../posts/entities/post.entity';
 import { ProfilesService } from './../profiles/profiles.service';
 import { Profile } from './../profiles/entities/profile.entity';
+import { Public } from './../common/decorators/public.decorator';
+import { PaginationArgs } from './../common/dto/pagination.args';
+import { Roles } from './../common/decorators/roles.decorator';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -26,6 +29,7 @@ export class UsersResolver {
   ) {}
 
   @Mutation(() => User)
+  @Public()
   async createUser(
     @Args('createUserInput') createUserInput: CreateUserInput,
   ): Promise<User> {
@@ -33,10 +37,7 @@ export class UsersResolver {
   }
 
   @Query(() => [User], { name: 'getUsers' })
-  async findAll(
-    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
-    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<User[]> {
+  async findAll(@Args() { skip, limit }: PaginationArgs): Promise<User[]> {
     return this.usersService.findAll({
       skip: skip,
       limit: limit,
@@ -50,14 +51,14 @@ export class UsersResolver {
     return this.usersService.findOne({ _id: id });
   }
 
-  @ResolveField(() => User)
+  @ResolveField(() => [Post], { nullable: true })
   async posts(@Parent() { id }: User): Promise<Post[] | null> {
     return this.postsService.findAll({
       where: { userId: id },
     });
   }
 
-  @ResolveField(() => User)
+  @ResolveField(() => Profile, { nullable: true })
   async profile(@Parent() { id }: User): Promise<Profile | null> {
     return this.profilesService.findOne({ userId: id });
   }
@@ -70,6 +71,18 @@ export class UsersResolver {
     return this.usersService.update({
       where: { _id: id },
       data: updateUserInput,
+    });
+  }
+
+  @Roles('ADMIN')
+  @Mutation(() => User, { nullable: true, name: 'updateUserRole' })
+  async updateUserRole(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('updateUserRoleInput') updateUserRoleInput: UpdateUserRoleInput,
+  ): Promise<any> {
+    return this.usersService.update({
+      where: { _id: id },
+      data: updateUserRoleInput,
     });
   }
 

@@ -1,5 +1,11 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsBoolean, IsNotEmpty, IsString, Length } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 
 @InputType({ description: 'Create Post Input' })
 export class CreatePostInput {
@@ -20,6 +26,7 @@ export class CreatePostInput {
   userId!: string;
 
   @Field(() => [String], { nullable: true, description: 'Post Categories' })
+  @IsOptional()
   @IsString({ each: true })
   @Length(2, 60, { each: true })
   categoryIds?: string[];

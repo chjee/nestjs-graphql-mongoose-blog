@@ -32,8 +32,8 @@ export class PostsService {
     const posts = await this.posts
       .find(where || {})
       .sort(orderBy || '-createdAt')
-      .skip(skip || 0)
-      .limit(limit || 10)
+      .skip(Math.max(skip ?? 0, 0))
+      .limit(Math.min(Math.max(limit ?? 10, 1), 100))
       .exec();
 
     return posts;

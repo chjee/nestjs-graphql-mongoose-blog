@@ -5,6 +5,7 @@ import { CategoriesResolver } from './categories.resolver';
 import { Category, CategorySchema } from './entities/category.entity';
 
 @Module({
+  exports: [CategoriesService],
   imports: [
     MongooseModule.forFeature([
       { name: Category.name, schema: CategorySchema },

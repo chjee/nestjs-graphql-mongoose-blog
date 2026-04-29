@@ -46,7 +46,9 @@ describe('CategoriesResolver', () => {
       jest
         .spyOn(categoriesService, 'findAll')
         .mockImplementation(async () => categories);
-      expect(await categoriesResolver.findAll(0, 5)).toBe(categories);
+      expect(await categoriesResolver.findAll({ skip: 0, limit: 5 })).toBe(
+        categories,
+      );
     });
   });
 

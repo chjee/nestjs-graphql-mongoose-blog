@@ -1,24 +1,34 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { Query, Resolver } from '@nestjs/graphql';
+import { createGraphqlTestApp } from './graphql-test-app';
 
-describe('AppController (e2e)', () => {
+@Resolver()
+class HealthResolver {
+  @Query(() => String)
+  health(): string {
+    return 'ok';
+  }
+}
+
+describe('GraphQL app (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeAll(async () => {
+    app = await createGraphqlTestApp([HealthResolver]);
   });
 
-  it('/ (GET)', () => {
+  it('serves GraphQL requests without the production MongoDB module', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .post('/graphql')
+      .send({ query: '{ health }' })
       .expect(200)
-      .expect('Hello World!');
+      .expect({ data: { health: 'ok' } });
+  });
+
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
   });
 });
