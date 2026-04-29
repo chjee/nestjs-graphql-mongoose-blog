@@ -3,7 +3,6 @@ import {
   Query,
   Mutation,
   Args,
-  Int,
   ID,
   ResolveField,
   Parent,
@@ -14,6 +13,7 @@ import { CreateProfileInput } from './dto/create-profile.input';
 import { UpdateProfileInput } from './dto/update-profile.input';
 import { UsersService } from './../users/users.service';
 import { User } from './../users/entities/user.entity';
+import { PaginationArgs } from './../common/dto/pagination.args';
 
 @Resolver(() => Profile)
 export class ProfilesResolver {
@@ -30,10 +30,7 @@ export class ProfilesResolver {
   }
 
   @Query(() => [Profile], { name: 'getProfiles' })
-  async findAll(
-    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
-    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
-  ): Promise<Profile[]> {
+  async findAll(@Args() { skip, limit }: PaginationArgs): Promise<Profile[]> {
     return this.profilesService.findAll({
       skip: skip,
       limit: limit,

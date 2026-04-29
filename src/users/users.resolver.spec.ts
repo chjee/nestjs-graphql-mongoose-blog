@@ -60,7 +60,7 @@ describe('UsersResolver', () => {
   describe('findAll', () => {
     it('should return an array of users', async () => {
       jest.spyOn(usersService, 'findAll').mockImplementation(async () => users);
-      expect(await usersResolver.findAll(0, 5)).toBe(users);
+      expect(await usersResolver.findAll({ skip: 0, limit: 5 })).toBe(users);
     });
   });
 
