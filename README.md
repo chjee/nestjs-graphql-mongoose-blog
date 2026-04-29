@@ -93,6 +93,62 @@ query {
 }
 ```
 
+### Mutation examples
+
+Public sign-in:
+
+```graphql
+mutation {
+  login(signInInput: { email: "admin@example.com", password: "password123" }) {
+    token
+  }
+}
+```
+
+Public user registration. The server assigns the `USER` role:
+
+```graphql
+mutation {
+  createUser(
+    createUserInput: {
+      email: "new-user@example.com"
+      name: "New User"
+      password: "password123"
+    }
+  ) {
+    id
+    email
+    name
+    role
+  }
+}
+```
+
+Authenticated profile update. This mutation does not change roles:
+
+```graphql
+mutation {
+  updateUser(id: "<USER_ID>", updateUserInput: { name: "Updated Name" }) {
+    id
+    email
+    name
+    role
+  }
+}
+```
+
+Admin-only role change. Send `Authorization: Bearer <ADMIN_JWT>` with the request:
+
+```graphql
+mutation {
+  updateUserRole(id: "<USER_ID>", updateUserRoleInput: { role: "ADMIN" }) {
+    id
+    email
+    role
+  }
+}
+```
+
 ## Dependency notes
 
 The project is on NestJS 11, Apollo Server 5, and Mongoose 8 via `@nestjs/mongoose` 11.
