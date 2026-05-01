@@ -14,6 +14,10 @@ import { UpdateProfileInput } from './dto/update-profile.input';
 import { UsersService } from './../users/users.service';
 import { User } from './../users/entities/user.entity';
 import { PaginationArgs } from './../common/dto/pagination.args';
+import { User as CurrentUser } from './../common/decorators/user.decorator';
+import { AuthenticatedUser } from './../common/interfaces/authenticated-user.interface';
+import { assertCanAccessUser } from './../common/utils/authorization.util';
+import { ObjectIdPipe } from './../common/pipes/object-id.pipe';
 
 @Resolver(() => Profile)
 export class ProfilesResolver {
@@ -24,8 +28,11 @@ export class ProfilesResolver {
 
   @Mutation(() => Profile)
   async createProfile(
+    @CurrentUser() user: AuthenticatedUser,
     @Args('createProfileInput') createProfileInput: CreateProfileInput,
   ): Promise<Profile> {
+    assertCanAccessUser(user, createProfileInput.userId);
+
     return this.profilesService.create(createProfileInput);
   }
 
@@ -39,7 +46,7 @@ export class ProfilesResolver {
 
   @Query(() => Profile, { nullable: true, name: 'getProfileById' })
   async findOne(
-    @Args('id', { type: () => ID }) id: string,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
   ): Promise<Profile | null> {
     return this.profilesService.findOne({ _id: id });
   }
@@ -51,9 +58,18 @@ export class ProfilesResolver {
 
   @Mutation(() => Profile, { nullable: true, name: 'updateProfile' })
   async updateProfile(
-    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
     @Args('updateProfileInput') updateProfileInput: UpdateProfileInput,
   ): Promise<any> {
+    const profile = await this.profilesService.findOne({ _id: id });
+
+    if (!profile) {
+      return null;
+    }
+
+    assertCanAccessUser(user, profile.userId);
+
     return this.profilesService.update({
       where: { _id: id },
       data: updateProfileInput,
@@ -62,8 +78,17 @@ export class ProfilesResolver {
 
   @Mutation(() => Profile, { nullable: true, name: 'removeProfile' })
   async removeProfile(
-    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
   ): Promise<any> {
+    const profile = await this.profilesService.findOne({ _id: id });
+
+    if (!profile) {
+      return null;
+    }
+
+    assertCanAccessUser(user, profile.userId);
+
     return this.profilesService.remove({ _id: id });
   }
 }

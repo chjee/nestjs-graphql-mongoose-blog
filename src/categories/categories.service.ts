@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateCategoryInput } from './dto/create-category.input';
 import { UpdateCategoryInput } from './dto/update-category.input';
 import { Model } from 'mongoose';
@@ -10,8 +10,6 @@ export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categories: Model<Category>,
   ) {}
-  private readonly logger = new Logger(CategoriesService.name);
-
   async create(createCategoryInput: CreateCategoryInput): Promise<Category> {
     const category = new this.categories(createCategoryInput);
     return category.save();
@@ -24,12 +22,6 @@ export class CategoriesService {
     orderBy?: string;
   }): Promise<Category[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.categories.countDocuments(where || {}).exec();
-
-    if (count <= 0) {
-      this.logger.log('No categories found');
-      return [];
-    }
 
     const categories = await this.categories
       .find(where || {})

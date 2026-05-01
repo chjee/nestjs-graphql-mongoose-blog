@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import {
   user,
@@ -6,69 +9,121 @@ import {
   createUserInput,
   updateUserInput,
 } from '../common/constants/jest.constants';
-import { getModelToken } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
-import { ConfigService } from '@nestjs/config';
 
 describe('UsersService', () => {
   let usersService: UsersService;
+  let userModel: jest.Mock & Record<string, jest.Mock>;
+  let save: jest.Mock;
+
+  const queryChain = (result: unknown) => {
+    const exec = jest.fn().mockResolvedValue(result);
+    const limit = jest.fn().mockReturnValue({ exec });
+    const skip = jest.fn().mockReturnValue({ limit });
+    const sort = jest.fn().mockReturnValue({ skip });
+
+    return { exec, limit, skip, sort };
+  };
 
   beforeEach(async () => {
+    save = jest.fn().mockResolvedValue(user);
+    userModel = jest.fn().mockImplementation((data) => ({
+      ...data,
+      save,
+    })) as jest.Mock & Record<string, jest.Mock>;
+    userModel.find = jest.fn();
+    userModel.findOne = jest.fn();
+    userModel.findOneAndUpdate = jest.fn();
+    userModel.findOneAndDelete = jest.fn();
+
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: getModelToken(User.name), useValue: {} },
-        ConfigService,
+        { provide: getModelToken(User.name), useValue: userModel },
+        { provide: ConfigService, useValue: { get: jest.fn(() => 10) } },
       ],
-    })
-      .overrideProvider(getModelToken(User.name))
-      .useValue({})
-      .compile();
+    }).compile();
 
     usersService = moduleRef.get<UsersService>(UsersService);
   });
 
-  describe('create', () => {
-    it('should return a user', async () => {
-      jest.spyOn(usersService, 'create').mockImplementation(async () => user);
-      expect(await usersService.create(createUserInput)).toBe(user);
-    });
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  describe('findAll', () => {
-    it('should return an array of users', async () => {
-      jest.spyOn(usersService, 'findAll').mockImplementation(async () => users);
-      expect(await usersService.findAll({ skip: 0, limit: 5 })).toBe(users);
+  it('hashes passwords and creates USER role accounts', async () => {
+    jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-password' as never);
+
+    await expect(usersService.create(createUserInput)).resolves.toBe(user);
+
+    expect(bcrypt.hash).toHaveBeenCalledWith(createUserInput.password, 10);
+    expect(userModel).toHaveBeenCalledWith({
+      ...createUserInput,
+      password: 'hashed-password',
+      role: 'USER',
     });
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
-  describe('findOne', () => {
-    it('should return a user', async () => {
-      jest.spyOn(usersService, 'findOne').mockImplementation(async () => user);
-      expect(
-        await usersService.findOne({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(user);
-    });
+  it('finds users with bounded pagination defaults', async () => {
+    const chain = queryChain(users);
+    userModel.find.mockReturnValue(chain);
+
+    await expect(usersService.findAll({})).resolves.toBe(users);
+
+    expect(userModel.find).toHaveBeenCalledWith({});
+    expect(chain.sort).toHaveBeenCalledWith('-createdAt');
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(10);
   });
 
-  describe('update', () => {
-    it('should return an updated user', async () => {
-      jest.spyOn(usersService, 'update').mockImplementation(async () => user);
-      expect(
-        await usersService.update({
-          where: { _id: '6576d6d44441e8ea8a38b5a8' },
-          data: updateUserInput,
-        }),
-      ).toBe(user);
+  it('applies filters and clamps pagination limits', async () => {
+    const chain = queryChain(users);
+    userModel.find.mockReturnValue(chain);
+
+    await usersService.findAll({
+      where: { role: 'ADMIN' },
+      orderBy: 'email',
+      skip: -5,
+      limit: 999,
     });
+
+    expect(userModel.find).toHaveBeenCalledWith({ role: 'ADMIN' });
+    expect(chain.sort).toHaveBeenCalledWith('email');
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(100);
   });
 
-  describe('remove', () => {
-    it('should return a user', async () => {
-      jest.spyOn(usersService, 'remove').mockImplementation(async () => user);
-      expect(
-        await usersService.remove({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(user);
-    });
+  it('finds one user', async () => {
+    const exec = jest.fn().mockResolvedValue(user);
+    userModel.findOne.mockReturnValue({ exec });
+
+    await expect(usersService.findOne({ _id: user.id })).resolves.toBe(user);
+    expect(userModel.findOne).toHaveBeenCalledWith({ _id: user.id });
+  });
+
+  it('updates one user', async () => {
+    const exec = jest.fn().mockResolvedValue(user);
+    userModel.findOneAndUpdate.mockReturnValue({ exec });
+
+    await expect(
+      usersService.update({
+        where: { _id: user.id },
+        data: updateUserInput,
+      }),
+    ).resolves.toBe(user);
+    expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: user.id },
+      { $set: updateUserInput },
+      { new: true },
+    );
+  });
+
+  it('removes one user', async () => {
+    const exec = jest.fn().mockResolvedValue(user);
+    userModel.findOneAndDelete.mockReturnValue({ exec });
+
+    await expect(usersService.remove({ _id: user.id })).resolves.toBe(user);
+    expect(userModel.findOneAndDelete).toHaveBeenCalledWith({ _id: user.id });
   });
 });

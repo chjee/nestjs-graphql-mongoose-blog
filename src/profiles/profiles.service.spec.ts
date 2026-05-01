@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { ProfilesService } from './profiles.service';
 import {
   profile,
@@ -6,79 +7,109 @@ import {
   createProfileInput,
   updateProfileInput,
 } from '../common/constants/jest.constants';
-import { getModelToken } from '@nestjs/mongoose';
 import { Profile } from './entities/profile.entity';
 
 describe('ProfilesService', () => {
   let profilesService: ProfilesService;
+  let profileModel: jest.Mock & Record<string, jest.Mock>;
+  let save: jest.Mock;
+
+  const queryChain = (result: unknown) => {
+    const exec = jest.fn().mockResolvedValue(result);
+    const limit = jest.fn().mockReturnValue({ exec });
+    const skip = jest.fn().mockReturnValue({ limit });
+    const sort = jest.fn().mockReturnValue({ skip });
+
+    return { exec, limit, skip, sort };
+  };
 
   beforeEach(async () => {
+    save = jest.fn().mockResolvedValue(profile);
+    profileModel = jest.fn().mockImplementation((data) => ({
+      ...data,
+      save,
+    })) as jest.Mock & Record<string, jest.Mock>;
+    profileModel.find = jest.fn();
+    profileModel.findOne = jest.fn();
+    profileModel.findOneAndUpdate = jest.fn();
+    profileModel.findOneAndDelete = jest.fn();
+
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         ProfilesService,
-        { provide: getModelToken(Profile.name), useValue: {} },
+        { provide: getModelToken(Profile.name), useValue: profileModel },
       ],
-    })
-      .overrideProvider(getModelToken(Profile.name))
-      .useValue({})
-      .compile();
+    }).compile();
 
     profilesService = moduleRef.get<ProfilesService>(ProfilesService);
   });
 
-  describe('create', () => {
-    it('should return a profile', async () => {
-      jest
-        .spyOn(profilesService, 'create')
-        .mockImplementation(async () => profile);
-      expect(await profilesService.create(createProfileInput)).toBe(profile);
-    });
+  it('creates a profile document', async () => {
+    await expect(profilesService.create(createProfileInput)).resolves.toBe(
+      profile,
+    );
+    expect(profileModel).toHaveBeenCalledWith(createProfileInput);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
-  describe('findAll', () => {
-    it('should return an array of profiles', async () => {
-      jest
-        .spyOn(profilesService, 'findAll')
-        .mockImplementation(async () => profiles);
-      expect(await profilesService.findAll({ skip: 0, limit: 5 })).toBe(
-        profiles,
-      );
-    });
+  it('finds profiles with bounded pagination defaults', async () => {
+    const chain = queryChain(profiles);
+    profileModel.find.mockReturnValue(chain);
+
+    await expect(profilesService.findAll({})).resolves.toBe(profiles);
+
+    expect(profileModel.find).toHaveBeenCalledWith({});
+    expect(chain.sort).toHaveBeenCalledWith('-createdAt');
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(10);
   });
 
-  describe('findOne', () => {
-    it('should return a profile', async () => {
-      jest
-        .spyOn(profilesService, 'findOne')
-        .mockImplementation(async () => profile);
-      expect(
-        await profilesService.findOne({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(profile);
-    });
+  it('clamps pagination limits', async () => {
+    const chain = queryChain(profiles);
+    profileModel.find.mockReturnValue(chain);
+
+    await profilesService.findAll({ skip: -1, limit: 0 });
+
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(1);
   });
 
-  describe('update', () => {
-    it('should return an updated profile', async () => {
-      jest
-        .spyOn(profilesService, 'update')
-        .mockImplementation(async () => profile);
-      expect(
-        await profilesService.update({
-          where: { _id: '6576d6d44441e8ea8a38b5a8' },
-          data: updateProfileInput,
-        }),
-      ).toBe(profile);
-    });
+  it('finds one profile', async () => {
+    const exec = jest.fn().mockResolvedValue(profile);
+    profileModel.findOne.mockReturnValue({ exec });
+
+    await expect(profilesService.findOne({ _id: profile.id })).resolves.toBe(
+      profile,
+    );
+    expect(profileModel.findOne).toHaveBeenCalledWith({ _id: profile.id });
   });
 
-  describe('remove', () => {
-    it('should return a profile', async () => {
-      jest
-        .spyOn(profilesService, 'remove')
-        .mockImplementation(async () => profile);
-      expect(
-        await profilesService.remove({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(profile);
+  it('updates one profile', async () => {
+    const exec = jest.fn().mockResolvedValue(profile);
+    profileModel.findOneAndUpdate.mockReturnValue({ exec });
+
+    await expect(
+      profilesService.update({
+        where: { _id: profile.id },
+        data: updateProfileInput,
+      }),
+    ).resolves.toBe(profile);
+    expect(profileModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: profile.id },
+      { $set: updateProfileInput },
+      { new: true },
+    );
+  });
+
+  it('removes one profile', async () => {
+    const exec = jest.fn().mockResolvedValue(profile);
+    profileModel.findOneAndDelete.mockReturnValue({ exec });
+
+    await expect(profilesService.remove({ _id: profile.id })).resolves.toBe(
+      profile,
+    );
+    expect(profileModel.findOneAndDelete).toHaveBeenCalledWith({
+      _id: profile.id,
     });
   });
 });

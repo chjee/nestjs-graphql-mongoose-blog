@@ -1,17 +1,20 @@
 import * as request from 'supertest';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { CategoriesService } from '../src/categories/categories.service';
 import { createGraphqlTestApp } from './graphql-test-app';
 import { CategoriesResolver } from '../src/categories/categories.resolver';
+import { RolesGuard } from '../src/common/guards/roles.guard';
+import { TestJwtAuthGuard } from './test-jwt-auth.guard';
 
 describe('CategorysResolver (e2e)', () => {
   let app: INestApplication;
   const categoriesService = {
-    create: () => mockCategory,
-    findAll: () => [mockCategory],
-    findOne: () => mockCategory,
-    update: () => mockCategory,
-    remove: () => mockCategory,
+    create: jest.fn(() => mockCategory),
+    findAll: jest.fn(() => [mockCategory]),
+    findOne: jest.fn(() => mockCategory),
+    update: jest.fn(() => mockCategory),
+    remove: jest.fn(() => mockCategory),
   };
 
   const mockCategory = {
@@ -24,13 +27,21 @@ describe('CategorysResolver (e2e)', () => {
   beforeAll(async () => {
     app = await createGraphqlTestApp([
       CategoriesResolver,
+      RolesGuard,
       { provide: CategoriesService, useValue: categoriesService },
+      { provide: APP_GUARD, useClass: TestJwtAuthGuard },
+      { provide: APP_GUARD, useExisting: RolesGuard },
     ]);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it('createCategory', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {
@@ -49,9 +60,36 @@ describe('CategorysResolver (e2e)', () => {
       .expect({ data: { createCategory: categoriesService.create() } });
   });
 
+  it('rejects createCategory for USER role tokens', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .set('Authorization', 'Bearer USER')
+      .send({
+        query: `
+          mutation {
+            createCategory(
+              createCategoryInput: {
+                name: "Science"
+            })
+            {
+              id
+              name
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body.data).toBeNull();
+        expect(body.errors?.[0]?.message).toBe('Forbidden resource');
+        expect(categoriesService.create).not.toHaveBeenCalled();
+      });
+  });
+
   it('findAll', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           query {
@@ -70,6 +108,7 @@ describe('CategorysResolver (e2e)', () => {
   it('findOne', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           query {
@@ -88,6 +127,7 @@ describe('CategorysResolver (e2e)', () => {
   it('updateCategory', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {
@@ -109,6 +149,7 @@ describe('CategorysResolver (e2e)', () => {
   it('removeCategory', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {

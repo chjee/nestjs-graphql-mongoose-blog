@@ -26,9 +26,15 @@ import { RolesGuard } from './common/guards/roles.guard';
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const uri = configService.get<string>('MONGO_URI');
+
+        if (!uri) {
+          throw new Error('MONGO_URI is required');
+        }
+
+        return { uri };
+      },
     }),
     AuthModule,
     UsersModule,

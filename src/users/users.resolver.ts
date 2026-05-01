@@ -19,6 +19,10 @@ import { Profile } from './../profiles/entities/profile.entity';
 import { Public } from './../common/decorators/public.decorator';
 import { PaginationArgs } from './../common/dto/pagination.args';
 import { Roles } from './../common/decorators/roles.decorator';
+import { User as CurrentUser } from './../common/decorators/user.decorator';
+import { AuthenticatedUser } from './../common/interfaces/authenticated-user.interface';
+import { assertCanAccessUser } from './../common/utils/authorization.util';
+import { ObjectIdPipe } from './../common/pipes/object-id.pipe';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -46,7 +50,7 @@ export class UsersResolver {
 
   @Query(() => User, { nullable: true, name: 'getUserById' })
   async findOne(
-    @Args('id', { type: () => ID }) id: string,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
   ): Promise<User | null> {
     return this.usersService.findOne({ _id: id });
   }
@@ -65,9 +69,12 @@ export class UsersResolver {
 
   @Mutation(() => User, { nullable: true, name: 'updateUser' })
   async updateUser(
-    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
     @Args('updateUserInput') updateUserInput: UpdateUserInput,
   ): Promise<any> {
+    assertCanAccessUser(user, id);
+
     return this.usersService.update({
       where: { _id: id },
       data: updateUserInput,
@@ -77,7 +84,7 @@ export class UsersResolver {
   @Roles('ADMIN')
   @Mutation(() => User, { nullable: true, name: 'updateUserRole' })
   async updateUserRole(
-    @Args('id', { type: () => ID }) id: string,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
     @Args('updateUserRoleInput') updateUserRoleInput: UpdateUserRoleInput,
   ): Promise<any> {
     return this.usersService.update({
@@ -87,7 +94,12 @@ export class UsersResolver {
   }
 
   @Mutation(() => User, { nullable: true, name: 'removeUser' })
-  async removeUser(@Args('id', { type: () => ID }) id: string): Promise<any> {
+  async removeUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Args('id', { type: () => ID }, ObjectIdPipe) id: string,
+  ): Promise<any> {
+    assertCanAccessUser(user, id);
+
     return this.usersService.remove({ _id: id });
   }
 }
