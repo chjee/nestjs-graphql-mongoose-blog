@@ -1,10 +1,13 @@
 import * as request from 'supertest';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { UsersService } from '../src/users/users.service';
 import { createGraphqlTestApp } from './graphql-test-app';
 import { UsersResolver } from '../src/users/users.resolver';
 import { PostsService } from '../src/posts/posts.service';
 import { ProfilesService } from '../src/profiles/profiles.service';
+import { RolesGuard } from '../src/common/guards/roles.guard';
+import { TestJwtAuthGuard } from './test-jwt-auth.guard';
 
 describe('UsersResolver (e2e)', () => {
   let app: INestApplication;
@@ -32,15 +35,19 @@ describe('UsersResolver (e2e)', () => {
   beforeAll(async () => {
     app = await createGraphqlTestApp([
       UsersResolver,
+      RolesGuard,
       { provide: UsersService, useValue: usersService },
       { provide: PostsService, useValue: postsService },
       { provide: ProfilesService, useValue: profilesService },
+      { provide: APP_GUARD, useClass: TestJwtAuthGuard },
+      { provide: APP_GUARD, useExisting: RolesGuard },
     ]);
   });
 
   it('createUser', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {
@@ -65,6 +72,7 @@ describe('UsersResolver (e2e)', () => {
   it('findAll', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           query {
@@ -85,6 +93,7 @@ describe('UsersResolver (e2e)', () => {
   it('rejects invalid pagination', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           query {
@@ -105,6 +114,7 @@ describe('UsersResolver (e2e)', () => {
   it('findOne', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           query {
@@ -122,9 +132,31 @@ describe('UsersResolver (e2e)', () => {
       .expect({ data: { getUserById: usersService.findOne() } });
   });
 
+  it('rejects invalid ObjectId arguments', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
+      .send({
+        query: `
+          query {
+            getUserById(id: "not-a-valid-object-id")
+            {
+              id
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body.data).toEqual({ getUserById: null });
+        expect(body.errors?.[0]?.message).toBe('Invalid ObjectId');
+      });
+  });
+
   it('updateUser', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {
@@ -148,6 +180,7 @@ describe('UsersResolver (e2e)', () => {
   it('updateUserRole', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {
@@ -171,6 +204,7 @@ describe('UsersResolver (e2e)', () => {
   it('removeUser', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer ADMIN')
       .send({
         query: `
           mutation {

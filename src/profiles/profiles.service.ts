@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateProfileInput } from './dto/create-profile.input';
 import { UpdateProfileInput } from './dto/update-profile.input';
 import { InjectModel } from '@nestjs/mongoose';
@@ -8,8 +8,6 @@ import { Profile } from './entities/profile.entity';
 @Injectable()
 export class ProfilesService {
   constructor(@InjectModel(Profile.name) private profiles: Model<Profile>) {}
-  private readonly logger = new Logger(ProfilesService.name);
-
   async create(createProfileInput: CreateProfileInput): Promise<Profile> {
     const user = new this.profiles(createProfileInput);
     return user.save();
@@ -22,12 +20,6 @@ export class ProfilesService {
     orderBy?: string;
   }): Promise<Profile[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.profiles.countDocuments(where || {}).exec();
-
-    if (count <= 0) {
-      this.logger.log('No profiles found');
-      return [];
-    }
 
     const profiles = await this.profiles
       .find(where || {})

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreatePostInput } from './dto/create-post.input';
 import { UpdatePostInput } from './dto/update-post.input';
 import { Model } from 'mongoose';
@@ -8,8 +8,6 @@ import { Post } from './entities/post.entity';
 @Injectable()
 export class PostsService {
   constructor(@InjectModel(Post.name) private posts: Model<Post>) {}
-  private readonly logger = new Logger(PostsService.name);
-
   async create(createPostInput: CreatePostInput): Promise<Post> {
     const post = new this.posts(createPostInput);
     return post.save();
@@ -22,12 +20,6 @@ export class PostsService {
     orderBy?: string;
   }): Promise<Post[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.posts.countDocuments(where || {}).exec();
-
-    if (count <= 0) {
-      this.logger.log('No posts found');
-      return [];
-    }
 
     const posts = await this.posts
       .find(where || {})

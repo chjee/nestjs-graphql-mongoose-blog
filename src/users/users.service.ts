@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { UpdateUserRoleInput } from './dto/update-user-role.input';
@@ -14,8 +14,6 @@ export class UsersService {
     @InjectModel(User.name) private users: Model<User>,
     private readonly configService: ConfigService,
   ) {}
-  private readonly logger = new Logger(UsersService.name);
-
   async create(createUserInput: CreateUserInput): Promise<User> {
     const hashedPassword = await bcrypt.hash(
       createUserInput.password,
@@ -37,12 +35,6 @@ export class UsersService {
     orderBy?: string;
   }): Promise<User[]> {
     const { skip, limit, where, orderBy } = params;
-    const count = await this.users.countDocuments(where || {}).exec();
-
-    if (count <= 0) {
-      this.logger.log('No users found');
-      return [];
-    }
 
     const users = await this.users
       .find(where || {})
