@@ -1,6 +1,7 @@
 import { InputType, Field } from '@nestjs/graphql';
 import {
   IsBoolean,
+  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -21,13 +22,11 @@ export class CreatePostInput {
 
   @Field(() => String, { description: 'User ID' })
   @IsNotEmpty()
-  @IsString()
-  @Length(2, 60)
+  @IsMongoId()
   userId!: string;
 
   @Field(() => [String], { nullable: true, description: 'Post Categories' })
   @IsOptional()
-  @IsString({ each: true })
-  @Length(2, 60, { each: true })
+  @IsMongoId({ each: true })
   categoryIds?: string[];
 }

@@ -1,9 +1,12 @@
 import * as request from 'supertest';
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ProfilesService } from '../src/profiles/profiles.service';
 import { createGraphqlTestApp } from './graphql-test-app';
 import { ProfilesResolver } from '../src/profiles/profiles.resolver';
 import { UsersService } from '../src/users/users.service';
+import { TestJwtAuthGuard } from './test-jwt-auth.guard';
+import { Types } from 'mongoose';
 
 describe('ProfilesResolver (e2e)', () => {
   let app: INestApplication;
@@ -21,6 +24,10 @@ describe('ProfilesResolver (e2e)', () => {
   const mockProfile = {
     id: '6576d6d44441e8ea8a38b5a8',
     bio: 'Happy',
+    userId: new Types.ObjectId('6576d6d44441e8ea8a38b5a8'),
+  };
+  const expectedProfile = {
+    ...mockProfile,
     userId: '6576d6d44441e8ea8a38b5a8',
   };
 
@@ -29,12 +36,14 @@ describe('ProfilesResolver (e2e)', () => {
       ProfilesResolver,
       { provide: ProfilesService, useValue: profilesService },
       { provide: UsersService, useValue: usersService },
+      { provide: APP_GUARD, useClass: TestJwtAuthGuard },
     ]);
   });
 
   it('createProfile', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer USER:6576ebe3c9d91d197cab7513')
       .send({
         query: `
           mutation {
@@ -52,12 +61,13 @@ describe('ProfilesResolver (e2e)', () => {
         `,
       })
       .expect(HttpStatus.OK)
-      .expect({ data: { createProfile: profilesService.create() } });
+      .expect({ data: { createProfile: expectedProfile } });
   });
 
   it('findAll', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer USER')
       .send({
         query: `
           query {
@@ -71,12 +81,13 @@ describe('ProfilesResolver (e2e)', () => {
         `,
       })
       .expect(HttpStatus.OK)
-      .expect({ data: { getProfiles: profilesService.findAll() } });
+      .expect({ data: { getProfiles: [expectedProfile] } });
   });
 
   it('findOne', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer USER')
       .send({
         query: `
           query {
@@ -90,12 +101,40 @@ describe('ProfilesResolver (e2e)', () => {
         `,
       })
       .expect(HttpStatus.OK)
-      .expect({ data: { getProfileById: profilesService.findOne() } });
+      .expect({ data: { getProfileById: expectedProfile } });
   });
 
   it('updateProfile', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer USER')
+      .send({
+        query: `
+          mutation {
+            updateProfile(id: "6576ebe3c9d91d197cab7513",
+              updateProfileInput: {
+                bio: "Soso"
+            })
+            {
+              id
+              bio
+              userId
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect({
+        data: {
+          updateProfile: expectedProfile,
+        },
+      });
+  });
+
+  it('rejects updateProfile for a different USER token', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .set('Authorization', 'Bearer USER:6576d6d44441e8ea8a38b5a9')
       .send({
         query: `
           mutation {
@@ -112,12 +151,16 @@ describe('ProfilesResolver (e2e)', () => {
         `,
       })
       .expect(HttpStatus.OK)
-      .expect({ data: { updateProfile: profilesService.update() } });
+      .expect(({ body }) => {
+        expect(body.data).toEqual({ updateProfile: null });
+        expect(body.errors?.[0]?.message).toBe('Forbidden');
+      });
   });
 
   it('removeProfile', async () => {
     return await request(app.getHttpServer())
       .post('/graphql')
+      .set('Authorization', 'Bearer USER')
       .send({
         query: `
           mutation {
@@ -131,7 +174,34 @@ describe('ProfilesResolver (e2e)', () => {
         `,
       })
       .expect(HttpStatus.OK)
-      .expect({ data: { removeProfile: profilesService.remove() } });
+      .expect({
+        data: {
+          removeProfile: expectedProfile,
+        },
+      });
+  });
+
+  it('rejects removeProfile for a different USER token', async () => {
+    return await request(app.getHttpServer())
+      .post('/graphql')
+      .set('Authorization', 'Bearer USER:6576d6d44441e8ea8a38b5a9')
+      .send({
+        query: `
+          mutation {
+            removeProfile(id: "6576ebe3c9d91d197cab7513")
+            {
+              id
+              bio
+              userId
+            }
+          }
+        `,
+      })
+      .expect(HttpStatus.OK)
+      .expect(({ body }) => {
+        expect(body.data).toEqual({ removeProfile: null });
+        expect(body.errors?.[0]?.message).toBe('Forbidden');
+      });
   });
 
   afterAll(async () => {

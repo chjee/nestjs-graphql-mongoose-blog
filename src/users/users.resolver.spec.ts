@@ -23,6 +23,11 @@ describe('UsersResolver', () => {
   let usersService: UsersService;
   let postsService: PostsService;
   let profilesService: ProfilesService;
+  const authUser = {
+    userId: user.id,
+    name: user.name,
+    role: user.role,
+  };
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -95,6 +100,7 @@ describe('UsersResolver', () => {
       jest.spyOn(usersService, 'update').mockImplementation(async () => user);
       expect(
         await usersResolver.updateUser(
+          authUser,
           '6576d6d44441e8ea8a38b5a8',
           updateUserInput,
         ),
@@ -117,9 +123,9 @@ describe('UsersResolver', () => {
   describe('remove', () => {
     it('should return a user', async () => {
       jest.spyOn(usersService, 'remove').mockImplementation(async () => user);
-      expect(await usersResolver.removeUser('6576d6d44441e8ea8a38b5a8')).toBe(
-        user,
-      );
+      expect(
+        await usersResolver.removeUser(authUser, '6576d6d44441e8ea8a38b5a8'),
+      ).toBe(user);
     });
   });
 });

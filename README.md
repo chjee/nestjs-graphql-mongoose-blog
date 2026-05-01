@@ -162,8 +162,10 @@ The project is on NestJS 11, Apollo Server 5, and Mongoose 8 via `@nestjs/mongoo
 Known audit status:
 
 - `npm audit --omit=dev` reports 5 moderate advisories from `@apollo/server -> uuid@11`.
-- Forcing `uuid@14` with npm overrides was tested and rejected because Apollo/Nest e2e startup fails under the current CommonJS test/runtime path.
-- Revisit this when `@apollo/server` publishes a compatible update that removes the vulnerable `uuid` range.
+- GitHub Dependabot alert #95 tracks `GHSA-w5hq-g745-h8pq` for transitive `uuid < 14.0.0`.
+- As of 2026-05-01, `@apollo/server@5.5.0` still depends on `uuid@^11.1.0`.
+- Forcing `uuid@14` with npm overrides was tested and rejected because Apollo/Nest e2e startup fails under the current CommonJS test/runtime path with `SyntaxError: Unexpected token 'export'`.
+- Revisit this when `@apollo/server` publishes a compatible update that removes the vulnerable `uuid` range, or when the test/runtime path is moved to an ESM-compatible setup.
 
 ## Author
 

@@ -16,12 +16,19 @@ import { UsersService } from './../users/users.service';
 import { CategoriesService } from './../categories/categories.service';
 import { Category } from './../categories/entities/category.entity';
 import { ConfigService } from '@nestjs/config';
+import { Types } from 'mongoose';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('PostsResolver', () => {
   let postsResolver: PostsResolver;
   let postsService: PostsService;
   let categoriesService: CategoriesService;
   let usersService: UsersService;
+  const authUser = {
+    userId: user.id,
+    name: user.name,
+    role: 'USER',
+  };
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -53,7 +60,9 @@ describe('PostsResolver', () => {
   describe('create', () => {
     it('should return a post', async () => {
       jest.spyOn(postsService, 'create').mockImplementation(async () => post);
-      expect(await postsResolver.createPost(createPostInput)).toBe(post);
+      expect(await postsResolver.createPost(authUser, createPostInput)).toBe(
+        post,
+      );
     });
   });
 
@@ -91,22 +100,58 @@ describe('PostsResolver', () => {
 
   describe('update', () => {
     it('should return an updated post', async () => {
+      jest.spyOn(postsService, 'findOne').mockImplementation(async () => ({
+        ...post,
+        userId: new Types.ObjectId(authUser.userId) as unknown as string,
+      }));
       jest.spyOn(postsService, 'update').mockImplementation(async () => post);
       expect(
         await postsResolver.updatePost(
+          authUser,
           '6576d6d44441e8ea8a38b5a8',
           updatePostInput,
         ),
       ).toBe(post);
     });
+
+    it('should reject updates from a different user', async () => {
+      jest.spyOn(postsService, 'findOne').mockImplementation(async () => post);
+      jest.spyOn(postsService, 'update').mockImplementation(async () => post);
+
+      await expect(
+        postsResolver.updatePost(
+          { ...authUser, userId: '6576d6d44441e8ea8a38b5a9' },
+          '6576d6d44441e8ea8a38b5a8',
+          updatePostInput,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(postsService.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('remove', () => {
     it('should return a post', async () => {
+      jest.spyOn(postsService, 'findOne').mockImplementation(async () => ({
+        ...post,
+        userId: new Types.ObjectId(authUser.userId) as unknown as string,
+      }));
       jest.spyOn(postsService, 'remove').mockImplementation(async () => post);
-      expect(await postsResolver.removePost('6576d6d44441e8ea8a38b5a8')).toBe(
-        post,
-      );
+      expect(
+        await postsResolver.removePost(authUser, '6576d6d44441e8ea8a38b5a8'),
+      ).toBe(post);
+    });
+
+    it('should reject removals from a different user', async () => {
+      jest.spyOn(postsService, 'findOne').mockImplementation(async () => post);
+      jest.spyOn(postsService, 'remove').mockImplementation(async () => post);
+
+      await expect(
+        postsResolver.removePost(
+          { ...authUser, userId: '6576d6d44441e8ea8a38b5a9' },
+          '6576d6d44441e8ea8a38b5a8',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(postsService.remove).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { PostsService } from './posts.service';
 import {
   post,
@@ -6,67 +7,108 @@ import {
   createPostInput,
   updatePostInput,
 } from '../common/constants/jest.constants';
-import { getModelToken } from '@nestjs/mongoose';
 import { Post } from './entities/post.entity';
 
 describe('PostsService', () => {
   let postsService: PostsService;
+  let postModel: jest.Mock & Record<string, jest.Mock>;
+  let save: jest.Mock;
+
+  const queryChain = (result: unknown) => {
+    const exec = jest.fn().mockResolvedValue(result);
+    const limit = jest.fn().mockReturnValue({ exec });
+    const skip = jest.fn().mockReturnValue({ limit });
+    const sort = jest.fn().mockReturnValue({ skip });
+
+    return { exec, limit, skip, sort };
+  };
 
   beforeEach(async () => {
+    save = jest.fn().mockResolvedValue(post);
+    postModel = jest.fn().mockImplementation((data) => ({
+      ...data,
+      save,
+    })) as jest.Mock & Record<string, jest.Mock>;
+    postModel.find = jest.fn();
+    postModel.findOne = jest.fn();
+    postModel.findOneAndUpdate = jest.fn();
+    postModel.findOneAndDelete = jest.fn();
+
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         PostsService,
-        { provide: getModelToken(Post.name), useValue: {} },
+        { provide: getModelToken(Post.name), useValue: postModel },
       ],
-    })
-      .overrideProvider(getModelToken(Post.name))
-      .useValue({})
-      .compile();
+    }).compile();
 
     postsService = moduleRef.get<PostsService>(PostsService);
   });
 
-  describe('create', () => {
-    it('should return a post', async () => {
-      jest.spyOn(postsService, 'create').mockImplementation(async () => post);
-      expect(await postsService.create(createPostInput)).toBe(post);
-    });
+  it('creates a post document', async () => {
+    await expect(postsService.create(createPostInput)).resolves.toBe(post);
+    expect(postModel).toHaveBeenCalledWith(createPostInput);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
-  describe('findAll', () => {
-    it('should return an array of posts', async () => {
-      jest.spyOn(postsService, 'findAll').mockImplementation(async () => posts);
-      expect(await postsService.findAll({ skip: 0, limit: 5 })).toBe(posts);
-    });
+  it('finds posts with bounded pagination defaults', async () => {
+    const chain = queryChain(posts);
+    postModel.find.mockReturnValue(chain);
+
+    await expect(postsService.findAll({})).resolves.toBe(posts);
+
+    expect(postModel.find).toHaveBeenCalledWith({});
+    expect(chain.sort).toHaveBeenCalledWith('-createdAt');
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(10);
   });
 
-  describe('findOne', () => {
-    it('should return a post', async () => {
-      jest.spyOn(postsService, 'findOne').mockImplementation(async () => post);
-      expect(
-        await postsService.findOne({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(post);
+  it('applies filters and ordering', async () => {
+    const chain = queryChain(posts);
+    postModel.find.mockReturnValue(chain);
+
+    await postsService.findAll({
+      where: { userId: post.userId },
+      orderBy: 'title',
+      skip: 2,
+      limit: 5,
     });
+
+    expect(postModel.find).toHaveBeenCalledWith({ userId: post.userId });
+    expect(chain.sort).toHaveBeenCalledWith('title');
+    expect(chain.skip).toHaveBeenCalledWith(2);
+    expect(chain.limit).toHaveBeenCalledWith(5);
   });
 
-  describe('update', () => {
-    it('should return an updated post', async () => {
-      jest.spyOn(postsService, 'update').mockImplementation(async () => post);
-      expect(
-        await postsService.update({
-          where: { _id: '6576d6d44441e8ea8a38b5a8' },
-          data: updatePostInput,
-        }),
-      ).toBe(post);
-    });
+  it('finds one post', async () => {
+    const exec = jest.fn().mockResolvedValue(post);
+    postModel.findOne.mockReturnValue({ exec });
+
+    await expect(postsService.findOne({ _id: post.id })).resolves.toBe(post);
+    expect(postModel.findOne).toHaveBeenCalledWith({ _id: post.id });
   });
 
-  describe('remove', () => {
-    it('should return a post', async () => {
-      jest.spyOn(postsService, 'remove').mockImplementation(async () => post);
-      expect(
-        await postsService.remove({ _id: '6576d6d44441e8ea8a38b5a8' }),
-      ).toBe(post);
-    });
+  it('updates one post', async () => {
+    const exec = jest.fn().mockResolvedValue(post);
+    postModel.findOneAndUpdate.mockReturnValue({ exec });
+
+    await expect(
+      postsService.update({
+        where: { _id: post.id },
+        data: updatePostInput,
+      }),
+    ).resolves.toBe(post);
+    expect(postModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: post.id },
+      { $set: updatePostInput },
+      { new: true },
+    );
+  });
+
+  it('removes one post', async () => {
+    const exec = jest.fn().mockResolvedValue(post);
+    postModel.findOneAndDelete.mockReturnValue({ exec });
+
+    await expect(postsService.remove({ _id: post.id })).resolves.toBe(post);
+    expect(postModel.findOneAndDelete).toHaveBeenCalledWith({ _id: post.id });
   });
 });

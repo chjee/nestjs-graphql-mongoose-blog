@@ -13,11 +13,18 @@ import { Profile } from './entities/profile.entity';
 import { User } from './../users/entities/user.entity';
 import { UsersService } from './../users/users.service';
 import { ConfigService } from '@nestjs/config';
+import { Types } from 'mongoose';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('ProfilesResolver', () => {
   let profilesResolver: ProfilesResolver;
   let profilesService: ProfilesService;
   let usersService: UsersService;
+  const authUser = {
+    userId: user.id,
+    name: user.name,
+    role: 'USER',
+  };
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -46,9 +53,9 @@ describe('ProfilesResolver', () => {
       jest
         .spyOn(profilesService, 'create')
         .mockImplementation(async () => profile);
-      expect(await profilesResolver.createProfile(createProfileInput)).toBe(
-        profile,
-      );
+      expect(
+        await profilesResolver.createProfile(authUser, createProfileInput),
+      ).toBe(profile);
     });
   });
 
@@ -83,26 +90,73 @@ describe('ProfilesResolver', () => {
 
   describe('update', () => {
     it('should return an updated profile', async () => {
+      jest.spyOn(profilesService, 'findOne').mockImplementation(async () => ({
+        ...profile,
+        userId: new Types.ObjectId(authUser.userId) as unknown as string,
+      }));
       jest
         .spyOn(profilesService, 'update')
         .mockImplementation(async () => profile);
       expect(
         await profilesResolver.updateProfile(
+          authUser,
           '6576d6d44441e8ea8a38b5a8',
           updateProfileInput,
         ),
       ).toBe(profile);
     });
+
+    it('should reject updates from a different user', async () => {
+      jest
+        .spyOn(profilesService, 'findOne')
+        .mockImplementation(async () => profile);
+      jest
+        .spyOn(profilesService, 'update')
+        .mockImplementation(async () => profile);
+
+      await expect(
+        profilesResolver.updateProfile(
+          { ...authUser, userId: '6576d6d44441e8ea8a38b5a9' },
+          '6576d6d44441e8ea8a38b5a8',
+          updateProfileInput,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(profilesService.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('remove', () => {
     it('should return a profile', async () => {
+      jest.spyOn(profilesService, 'findOne').mockImplementation(async () => ({
+        ...profile,
+        userId: new Types.ObjectId(authUser.userId) as unknown as string,
+      }));
       jest
         .spyOn(profilesService, 'remove')
         .mockImplementation(async () => profile);
       expect(
-        await profilesResolver.removeProfile('6576d6d44441e8ea8a38b5a8'),
+        await profilesResolver.removeProfile(
+          authUser,
+          '6576d6d44441e8ea8a38b5a8',
+        ),
       ).toBe(profile);
+    });
+
+    it('should reject removals from a different user', async () => {
+      jest
+        .spyOn(profilesService, 'findOne')
+        .mockImplementation(async () => profile);
+      jest
+        .spyOn(profilesService, 'remove')
+        .mockImplementation(async () => profile);
+
+      await expect(
+        profilesResolver.removeProfile(
+          { ...authUser, userId: '6576d6d44441e8ea8a38b5a9' },
+          '6576d6d44441e8ea8a38b5a8',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(profilesService.remove).not.toHaveBeenCalled();
     });
   });
 });
